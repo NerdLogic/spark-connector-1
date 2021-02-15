@@ -51,6 +51,16 @@ trait JdbcLayerInterface {
     * Close and cleanup
     */
   def close(): Unit
+
+  /**
+   * Commit transaction
+   */
+  def commit(): Unit
+
+  /**
+   * Rollback transaction
+   */
+  def rollback(): Unit
 }
 
 /**
@@ -183,6 +193,40 @@ class VerticaJdbcLayer(cfg: JDBCConfig) extends JdbcLayerInterface {
           conn.close()
         }
       case None => ()
+    }
+  }
+
+  def commit(): Unit = {
+    logger.debug("Commiting.")
+    connection match {
+      case Some(conn) =>
+        if(conn.isValid(0)){
+          try {
+            conn.commit()
+          }
+          catch {
+            case e: Throwable => Left(handleJDBCException(e))
+          }
+        }
+      case None =>
+        Left(JDBCLayerError(ConnectionError))
+    }
+  }
+
+  def rollback(): Unit = {
+    logger.debug("Commiting.")
+    connection match {
+      case Some(conn) =>
+        if(conn.isValid(0)){
+          try {
+            conn.rollback()
+          }
+          catch {
+            case e: Throwable => Left(handleJDBCException(e))
+          }
+        }
+      case None =>
+        Left(JDBCLayerError(ConnectionError))
     }
   }
 }
